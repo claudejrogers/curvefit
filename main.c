@@ -113,6 +113,8 @@ int main (int argc, char **argv)
     levenberg_marquardt(&values, var);
 
     fclose(fp);
+    
+    output(filename, &values, var);
 
     free((void *) xv);
     free((void *) yv);
@@ -123,6 +125,3 @@ int main (int argc, char **argv)
 
     return 0;
 }
-
-
-

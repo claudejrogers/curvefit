@@ -31,7 +31,9 @@ void equation(struct cfdata *data, double *var);
 void derivatives(struct cfdata *data, double *var);
 void get_f(gsl_vector *fvect, struct cfdata *data, double *var);
 void get_jac(double *jac, struct cfdata *data, double *var);
-void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data, double *g, double *h);
+void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data, 
+             double *g, double *h);
 double get_rho(gsl_vector *fvect, gsl_vector *newfvect, struct cfdata *data,
                double mu, double *h, double *g);
 void levenberg_marquardt(struct cfdata *data, double *var);
+void output(char *filename, struct cfdata *data, double *var);

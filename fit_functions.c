@@ -14,8 +14,10 @@
 
 void usage(char **argv)
 {
-    printf("\nUsage: %s -f <filename> -m <model> [-x <var1> -y <var2> -z <var2>]\n"
-           "\nFit experimental data to either an ic50 or Michaelis-Menten model\n\n"
+    printf("\nUsage: %s -f <filename> -m <model> [-x <var1> -y <var2> -z "
+           "<var2>]\n"
+           "\nFit experimental data to either an ic50 or Michaelis-Menten " 
+           "model\n\n"
            "INPUT:\nRequired. Provide the filepath to the input data.\n"
            "\t-f FILENAME\tFile must contain tab delimited x and y data\n"
            "MODEL:\nRequired. Enter model name.\n"
@@ -23,8 +25,8 @@ void usage(char **argv)
            "INITIAL GUESS:\nOptional. Provide values for fit parameters. "
            "Default values are 1.0.\n\t-x VALUE\tValue for max-min or Vmax.\n"
            "\t-y VALUE\tValue for ic50 or Km.\n\t-z VALUE\tValue for Hill "
-           "coefficient.\n\nOUTPUT:\nUpdated values for the variables are displayed"
-           " for each iteration,\nalong with |f(x)|.\n\n", argv[0]);
+           "coefficient.\n\nOUTPUT:\nUpdated values for the variables are "
+           "displayed for each iteration,\nalong with |f(x)|.\n\n", argv[0]);
 }
 
 int filelines(char *filepath)
@@ -66,7 +68,8 @@ void derivatives(struct cfdata *data, double *var)
                            (pow((1 + pow((var[1]/data->x[i]), var[2])), 2)));
         } else {
             data->d1[i] = (data->x[i] / (var[1] + data->x[i]));
-            data->d2[i] = (-(var[0] * data->x[i]) / pow((var[1] + data->x[i]), 2.0));
+            data->d2[i] = (-(var[0] * data->x[i]) / pow((var[1] + data->x[i]), 
+                                                        2.0));
         }
     }
 }
@@ -101,7 +104,8 @@ void get_jac(double *jac, struct cfdata *data, double *var)
     }
 }
 
-void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data, double *g, double *h)
+void solve_h(double *a, gsl_matrix *muImat, 
+             struct cfdata *data, double *g, double *h)
 {
     int i, s, l, dl;
     l = data->varlen;
@@ -257,10 +261,10 @@ void levenberg_marquardt(struct cfdata *data, double *var)
     if (!strcmp(data->model, "ic50")) {
         printf("\tdelta:\t%8.5f\n"
                "\t ic50:\t%8.5f\n"
-               "\t Hill:\t%8.5f\n", var[0], var[1], var[2]);
+               "\t Hill:\t%8.5f\n\n", var[0], var[1], var[2]);
     } else
         printf("\tVmax:\t%8.5f\n"
-               "\t  Km:\t%8.5f\n", var[0], var[1]);
+               "\t  Km:\t%8.5f\n\n", var[0], var[1]);
 
     free((void *) new_var);
     free((void *) j);
@@ -271,4 +275,80 @@ void levenberg_marquardt(struct cfdata *data, double *var)
     gsl_vector_free(f);
     gsl_vector_free(new_f);
     gsl_matrix_free(muI);
+}
+
+void output(char *filename, struct cfdata *data, double *var)
+{
+    FILE *fdata, *fscript;
+    int i;
+    size_t len = strlen(filename);
+    char data_tag[] = "_input.dat";
+    char script_tag[] = "_script.plt";
+    char plot_tag[] = "_plot.png";
+    char *outdata;
+    char *outscript;
+    char *outplot;
+    double minx, maxx, miny, maxy;
+    
+    outdata = (char *) malloc(sizeof(char) * (len + 11));
+    outscript = (char *) malloc(sizeof(char) * (len + 12));
+    outplot = (char *) malloc(sizeof(char) * (len + 10));
+    
+    for (i = 0; i < len - 4; i++) {
+        outdata[i] = outscript[i] = outplot[i] = filename[i];
+    }
+    
+    strcat(outdata, data_tag);
+    strcat(outscript, script_tag);
+    strcat(outplot, plot_tag);
+    
+    minx = maxx = data->x[0];
+    miny = maxy = data->y[0];
+    for (i = 0; i < data->datalen; i++) {
+        double xi = data->x[i];
+        double yi = data->y[i];
+        minx = ((minx < xi) ? minx : xi);
+        maxx = ((maxx > xi) ? maxx : xi);
+        miny = ((miny < yi) ? miny : yi);
+        maxy = ((maxy > yi) ? maxy : yi);
+    }
+    
+    miny -= 0.2*maxy;
+    maxy += 0.2*maxy;
+    
+    
+    fdata = fopen(outdata, "w");
+    for (i = 0; i < data->datalen; i++)
+        fprintf(fdata, "%g\t%g\n", data->x[i], data->y[i]);
+    fclose(fdata);
+    
+    fscript = fopen(outscript, "w");
+    
+    if (!strcmp(data->model, "ic50")) {
+        fprintf(fscript, 
+                "set terminal png\n"
+                "set output \"%s\"\n"
+                "f(x) = 1 - (%f/(1 + (%f/x)**%f))\n"
+                "set xrange [%f:%f]\n"
+                "set yrange [%f:%f]\n"
+                "set log x\n"
+                "plot \"%s\" using 1:2 with points 4,"
+                " f(x) with lines 22\n", 
+                outplot, var[0], var[1], var[2], minx, maxx, miny, maxy, outdata);
+    } else {
+        fprintf(fscript, 
+                "set terminal png\n"
+                "set output \"%s\"\n"
+                "f(x) = (%f * x) / (%f + x)\n"
+                "set xrange [%f:%f]\n"
+                "set yrange [%f:%f]\n"
+                "plot \"%s\" using 1:2 with points 4,"
+                " f(x) with lines 22\n", 
+                outplot, var[0], var[1], minx, maxx, miny, maxy, outdata);
+    }
+    fclose(fscript);
+    
+    free((void *) outdata);
+    free((void *) outscript);
+    free((void *) outplot);
 }

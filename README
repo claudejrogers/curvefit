@@ -10,7 +10,8 @@ The Michaelis-Menten model is based on the equation:
 y = Vmax * x / (Km + x)
 
 The program finds values for delta, ic50, and hill or Vmax, and Km
-that minimizes the difference between input and fitted values.
+that minimizes the difference between input and fitted values of y
+for all values of x.
 
 Requirements: GNU Scientific Library (http://www.gnu.org/software/gsl/)
 
