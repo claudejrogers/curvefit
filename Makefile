@@ -11,7 +11,7 @@ SRCS = main.c fit_functions.c
 OBJS = $(SRCS:.c=.o)
 
 $(PROG) : $(OBJS)
-			$(CC) $(LDFLAGS) -o $(PROG) $(OBJS)
+	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS)
          
 main.o : main.c fit_functions.h
 
@@ -19,4 +19,4 @@ fit_functions.o : fit_functions.c fit_functions.h
 
 .PHONY : clean
 clean :
-		-rm $(PROG) $(OBJS)
+	-rm $(PROG) $(OBJS)
