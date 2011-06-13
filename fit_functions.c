@@ -294,13 +294,14 @@ void output(char *filename, struct cfdata *data, double *var)
     outscript = (char *) malloc(sizeof(char) * (len + 12));
     outplot = (char *) malloc(sizeof(char) * (len + 10));
     
-    for (i = 0; i < len - 4; i++) {
+    for (i = 0; i < (len - 4); i++) {
         outdata[i] = outscript[i] = outplot[i] = filename[i];
     }
+    outdata[i] = outscript[i] = outplot[i] = '\0';
     
-    strcat(outdata, data_tag);
-    strcat(outscript, script_tag);
-    strcat(outplot, plot_tag);
+    strncat(outdata, data_tag, strlen(data_tag));
+    strncat(outscript, script_tag, strlen(script_tag));
+    strncat(outplot, plot_tag, strlen(plot_tag));
     
     minx = maxx = data->x[0];
     miny = maxy = data->y[0];
