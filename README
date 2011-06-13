@@ -1,0 +1,43 @@
+curvefit - a command line Levenberg-Marquardt solver for ic50 and
+Michaelis-Menten data.
+
+The ic50 model is based on the equation:
+
+y = 1 - (delta / (1 + (ic50 / x)^hill))
+
+The Michaelis-Menten model is based on the equation:
+
+y = Vmax * x / (Km + x)
+
+The program finds values for delta, ic50, and hill or Vmax, and Km
+that minimizes the difference between input and fitted values.
+
+Requirements: GNU Scientific Library (http://www.gnu.org/software/gsl/)
+
+A very basic makefile is included.
+
+The command to run the program is
+
+./curvefit -f /path/to/input/data -m <model> [-x <float> -y <float> -z <float>]
+
+Required Arguments:
+
+-f      Path to input data. Must be a tab delimited text file of (x, y) value 
+        pairs. No other data should be included in the file.
+
+-m      Desired model. Valid options are ic50 and mm.
+
+Optional Arguments:
+
+-xyz    Specify initial values for the parameters to fit. Default values are
+        1.0.
+
+        flag    ic50    mm
+        -----------------------
+        -x      delta   Vmax
+        -y      ic50    Km
+        -z      hill    ignored
+
+TODO:
+1. Add more models
+2. Expand input options
