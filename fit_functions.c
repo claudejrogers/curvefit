@@ -335,7 +335,8 @@ void output(char *filename, struct cfdata *data, double *var)
                 "set log x\n"
                 "plot \"%s\" using 1:2 with points 4,"
                 " f(x) with lines 22\n", 
-                outplot, var[0], var[1], var[2], minx, maxx, miny, maxy, outdata);
+                outplot, var[0], var[1], var[2], 
+                minx, maxx, miny, maxy, outdata);
     } else {
         fprintf(fscript, 
                 "set terminal png\n"

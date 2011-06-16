@@ -14,26 +14,78 @@
 #include <gsl/gsl_multifit_nlin.h>
 
 struct cfdata {
-    char *model;
-    int varlen;
-    int datalen;
-    double *x;
-    double *y;
-    double *m;
-    double *d1;
-    double *d2;
-    double *d3;
+    char *model; // TODO: Replace with enum once more models get added
+    int varlen;  // number of parameters for given model
+    int datalen; // number of data points
+    double *x;   // an array of the independent variable from input
+    double *y;   // an array of the dependent variable from input
+    double *m;   // calculated dependent variable based on xi and VAR
+    double *d1;  // partial derivative of var[0] wrt y for xi
+    double *d2;  // ...
+    double *d3;  // ..., not used for mm model
 };
 
 void usage(char **argv);
+
+/*
+ * Prints a help message
+ */
+
 int filelines(char *filepath);
+
+/*
+ * Counts the number of data points in the file
+ */
+
 void equation(struct cfdata *data, double *var);
+
+/*
+ * Calculates values for m(x, VAR)
+ */
+
 void derivatives(struct cfdata *data, double *var);
+
+/*
+ * Calculates values for the partial derivatives of the 
+ * vars.
+ */
 void get_f(gsl_vector *fvect, struct cfdata *data, double *var);
+
+/*
+ * Calculates f(x). f(xi, VAR) = yi - m(xi, VAR). Minimizing 
+ * $\frac{1}{2}\sum[f(x, VAR)]^2$ is the goal of the program
+ */
 void get_jac(double *jac, struct cfdata *data, double *var);
+
+/*
+ * Calculates the Jacobian
+ */
+
 void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data, 
              double *g, double *h);
+
+/*
+ * Solves the linear system (A + muI)h = -g
+ */
+
+
 double get_rho(gsl_vector *fvect, gsl_vector *newfvect, struct cfdata *data,
                double mu, double *h, double *g);
+
+/*
+ * Calculates an updating parameter
+ */
 void levenberg_marquardt(struct cfdata *data, double *var);
+
+/*
+ * The main routine. Finds values for VAR than minimize the
+ * function $\frac{1}{2}\Sigma[f(x, VAR)]^2$
+ */
+
 void output(char *filename, struct cfdata *data, double *var);
+
+/*
+ * Creates a gnuplot script to plot results. TODO: add -o option
+ * to allow users to specify a path to save these files.
+ */
+
