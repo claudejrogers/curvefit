@@ -75,6 +75,14 @@ double get_rho(gsl_vector *fvect, gsl_vector *newfvect, struct cfdata *data,
 /*
  * Calculates an updating parameter
  */
+
+double get_mu(int vlen, double *a);
+
+/*
+ * Calculates a scaling parameter
+ */
+
+
 void levenberg_marquardt(struct cfdata *data, double *var);
 
 /*

@@ -165,6 +165,19 @@ double get_rho(gsl_vector *fvect,
     return dF/dL;
 }
 
+
+double get_mu(int vlen, double *a)
+{
+    int i;
+    int alen = vlen*vlen;
+    double max = a[0];
+    
+    for (i=0; i < alen; i += (vlen + 1))
+        max = (max < a[i]) ? a[i] : max;
+    
+    return 1e-3*max;
+}
+
 void levenberg_marquardt(struct cfdata *data, double *var)
 {
     int i, k, v;
@@ -204,11 +217,8 @@ void levenberg_marquardt(struct cfdata *data, double *var)
 
     // compute g = J^T dot f
     gsl_blas_dgemv(CblasNoTrans, 1.0, &JT.matrix, f, 0.0, &G.vector);
-
-    if (!strcmp(data->model, "ic50"))
-        mu = 1e-3*(GSL_MAX_DBL(a[0], GSL_MAX_DBL(a[4], a[8])));
-    else
-        mu = 1e-3*(GSL_MAX_DBL(a[0], a[3]));
+    
+    mu = get_mu(data->varlen, a);
 
     while ((fabs(g[gsl_blas_idamax(&G.vector)]) >= NORM_G) && (k < MAX_ITER)) {
         k++;
