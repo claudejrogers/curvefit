@@ -18,7 +18,6 @@ int main (int argc, char **argv)
     int i, c;
     FILE *fp;
     char *filename = NULL;
-    char *model = NULL;
     struct cfdata values;
     double var[3];
     var[0] = var[1] = var[2] = 1.0;
@@ -32,8 +31,10 @@ int main (int argc, char **argv)
             filename = optarg;
             break;
         case 'm':
-            if (!strcmp(optarg, "ic50") || !strcmp(optarg, "mm"))
-                model = optarg;
+            if (!strcmp(optarg, "ic50"))
+                values.model = ic50;
+            else if (!strcmp(optarg, "mm"))
+                values.model = mm;
             else {
                 fprintf(stderr, "%s is not a supported model.\n", optarg);
                 usage(argv);
@@ -64,7 +65,7 @@ int main (int argc, char **argv)
         default:
             abort();
     }
-    if (!filename || !model) {
+    if (!filename) { 
         fprintf(stderr, "Missing required argument\n");
         usage(argv);
         return 1;
@@ -74,13 +75,20 @@ int main (int argc, char **argv)
 
     fp = fopen(filename, "r");
 
-    values.model = model;
     values.datalen = len;
-
-    if (!strcmp(model, "ic50")) {
-        values.varlen = 3;
-    } else {
-        values.varlen = 2;
+    
+    switch (values.model) {
+        case ic50:
+            values.varlen = 3;
+            break;
+        case mm:
+            values.varlen = 2;
+            break;
+        default:
+            fprintf(stderr, "Missing required argument\n");
+            usage(argv);
+            exit(7);
+            break;
     }
 
     double *xv;

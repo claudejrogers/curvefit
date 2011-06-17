@@ -13,8 +13,14 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_multifit_nlin.h>
 
+enum Models {
+    ic50, 
+    mm
+};
+
 struct cfdata {
-    char *model; // TODO: Replace with enum once more models get added
+    //char *model; // TODO: Replace with enum once more models get added
+    enum Models model;
     int varlen;  // number of parameters for given model
     int datalen; // number of data points
     double *x;   // an array of the independent variable from input

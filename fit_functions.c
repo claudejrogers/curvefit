@@ -46,10 +46,16 @@ void equation(struct cfdata *data, double *var)
 {
     int i;
     for (i = 0; i < data->datalen; i++) {
-        if (!strcmp(data->model, "ic50"))
-            data->m[i] = (1 - (var[0]/(1 + pow((var[1]/data->x[i]), var[2]))));
-        else
-            data->m[i] = ((var[0] * data->x[i]) / (var[1] + data->x[i]));
+        switch (data->model) {
+            case ic50:
+                data->m[i] = (1 - (var[0]/(1 + pow((var[1]/data->x[i]), var[2]))));
+                break;
+            case mm:
+                data->m[i] = ((var[0] * data->x[i]) / (var[1] + data->x[i]));
+                break;
+            default:
+                exit(2);
+        }
     }
 }
 
@@ -57,19 +63,24 @@ void derivatives(struct cfdata *data, double *var)
 {
     int i;
     for (i = 0; i < data->datalen; i++) {
-        if (!strcmp(data->model, "ic50")) {
-            data->d1[i] = (-(1/(1 + pow((var[1]/data->x[i]), var[2]))));
-            data->d2[i] = ((var[0] * var[2] * pow((var[1]/data->x[i]), 
-                                                  (var[2] - 1))) / 
-                           (data->x[i] * pow((1 + (pow((var[1]/data->x[i]), 
-                                                       var[2]))), 2)));
-            data->d3[i] = ((var[0] * pow((var[1]/data->x[i]), var[2]) * 
-                            log((var[1]/data->x[i]))) / 
-                           (pow((1 + pow((var[1]/data->x[i]), var[2])), 2)));
-        } else {
-            data->d1[i] = (data->x[i] / (var[1] + data->x[i]));
-            data->d2[i] = (-(var[0] * data->x[i]) / pow((var[1] + data->x[i]), 
-                                                        2.0));
+        switch (data->model) {
+            case ic50:
+                data->d1[i] = (-(1/(1 + pow((var[1]/data->x[i]), var[2]))));
+                data->d2[i] = ((var[0] * var[2] * pow((var[1]/data->x[i]), 
+                                                      (var[2] - 1))) / 
+                               (data->x[i] * pow((1 + (pow((var[1]/data->x[i]), 
+                                                           var[2]))), 2)));
+                data->d3[i] = ((var[0] * pow((var[1]/data->x[i]), var[2]) * 
+                                log((var[1]/data->x[i]))) / 
+                               (pow((1 + pow((var[1]/data->x[i]), var[2])), 2)));
+                break;
+            case mm:
+                data->d1[i] = (data->x[i] / (var[1] + data->x[i]));
+                data->d2[i] = (-(var[0] * data->x[i]) / pow((var[1] + data->x[i]), 
+                                                            2.0));
+                break;
+            default:
+                exit(3);
         }
     }
 }
@@ -93,13 +104,18 @@ void get_jac(double *jac, struct cfdata *data, double *var)
     j = data->datalen;
     k = 2 * data->datalen;
     for (i = 0; i < data->datalen; i++, j++, k++) {
-        if (!strcmp(data->model, "ic50")) {
-            jac[i] = -data->d1[i];
-            jac[j] = -data->d2[i];
-            jac[k] = -data->d3[i];
-        } else {
-            jac[i] = -data->d1[i];
-            jac[j] = -data->d2[i];
+        switch (data->model) {
+            case ic50:
+                jac[i] = -data->d1[i];
+                jac[j] = -data->d2[i];
+                jac[k] = -data->d3[i];
+                break;
+            case mm:
+                jac[i] = -data->d1[i];
+                jac[j] = -data->d2[i];
+                break;
+            default:
+                exit(4);
         }
     }
 }
@@ -268,13 +284,20 @@ void levenberg_marquardt(struct cfdata *data, double *var)
     }
 
     printf("\nFitted Parameters:\n");
-    if (!strcmp(data->model, "ic50")) {
-        printf("\tdelta:\t%8.5f\n"
-               "\t ic50:\t%8.5f\n"
-               "\t Hill:\t%8.5f\n\n", var[0], var[1], var[2]);
-    } else
-        printf("\tVmax:\t%8.5f\n"
-               "\t  Km:\t%8.5f\n\n", var[0], var[1]);
+    switch (data->model) {
+        case ic50:
+            printf("\tdelta:\t%8.5f\n"
+                   "\t ic50:\t%8.5f\n"
+                   "\t Hill:\t%8.5f\n\n", var[0], var[1], var[2]);
+            break;
+        case mm:
+            printf("\tVmax:\t%8.5f\n"
+                   "\t  Km:\t%8.5f\n\n", var[0], var[1]);
+            break;
+        default:
+            exit(5);
+            
+    }
 
     free((void *) new_var);
     free((void *) j);
@@ -335,29 +358,36 @@ void output(char *filename, struct cfdata *data, double *var)
     
     fscript = fopen(outscript, "w");
     
-    if (!strcmp(data->model, "ic50")) {
-        fprintf(fscript, 
-                "set terminal png\n"
-                "set output \"%s\"\n"
-                "f(x) = 1 - (%f/(1 + (%f/x)**%f))\n"
-                "set xrange [%f:%f]\n"
-                "set yrange [%f:%f]\n"
-                "set log x\n"
-                "plot \"%s\" using 1:2 with points 4,"
-                " f(x) with lines 22\n", 
-                outplot, var[0], var[1], var[2], 
-                minx, maxx, miny, maxy, outdata);
-    } else {
-        fprintf(fscript, 
-                "set terminal png\n"
-                "set output \"%s\"\n"
-                "f(x) = (%f * x) / (%f + x)\n"
-                "set xrange [%f:%f]\n"
-                "set yrange [%f:%f]\n"
-                "plot \"%s\" using 1:2 with points 4,"
-                " f(x) with lines 22\n", 
-                outplot, var[0], var[1], minx, maxx, miny, maxy, outdata);
+    switch (data->model) {
+        case ic50:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = 1 - (%f/(1 + (%f/x)**%f))\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "set log x\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], var[2], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
+        case mm:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = (%f * x) / (%f + x)\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
+        default:
+            exit(6);
     }
+
     fclose(fscript);
     
     free((void *) outdata);
