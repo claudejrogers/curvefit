@@ -14,6 +14,10 @@
 
 void usage(char **argv)
 {
+    /*
+     * This needs to be improved as models are added.
+     */
+    
     printf("\nUsage: %s -f <filename> -m <model> [-x <var1> -y <var2> -z "
            "<var2>]\n"
            "\nFit experimental data to either an ic50 or Michaelis-Menten " 
@@ -23,8 +27,8 @@ void usage(char **argv)
            "MODEL:\nRequired. Enter model name.\n"
            "\t-m MODEL\tSupported models are \"expdecay\" \"ic50\" and \"mm\"\n"
            "INITIAL GUESS:\nOptional. Provide values for fit parameters. "
-           "Default values are 1.0.\n\t-x VALUE\tValue for max-min or Vmax.\n"
-           "\t-y VALUE\tValue for ic50 or Km.\n\t-z VALUE\tValue for Hill "
+           "Default values are 1.0.\n\t-a VALUE\tValue for max-min or Vmax.\n"
+           "\t-b VALUE\tValue for ic50 or Km.\n\t-c VALUE\tValue for Hill "
            "coefficient.\n\nOUTPUT:\nUpdated values for the variables are "
            "displayed for each iteration,\nalong with |f(x)|.\n\n", argv[0]);
 }
@@ -46,15 +50,20 @@ void equation(struct cfdata *data, double *var)
 {
     int i;
     for (i = 0; i < data->datalen; i++) {
+        double xi = data->x[i];
         switch (data->model) {
             case expdecay:
-                data->m[i] = var[0] + var[1] * exp(-var[2] * data->x[i]);
+                data->m[i] = var[0] + var[1] * exp(-var[2] * xi);
+                break;
+            case gaussian:
+                data->m[i] = var[0] + var[1]*exp(-(xi - var[2])*(xi - var[2])/
+                                                 (var[3] * var[3]));
                 break;
             case ic50:
-                data->m[i] = (1 - (var[0]/(1 + pow((var[1]/data->x[i]), var[2]))));
+                data->m[i] = (1 - (var[0]/(1 + pow((var[1]/xi), var[2]))));
                 break;
             case mm:
-                data->m[i] = ((var[0] * data->x[i]) / (var[1] + data->x[i]));
+                data->m[i] = ((var[0] * xi) / (var[1] + xi));
                 break;
             default:
                 exit(2);
@@ -66,26 +75,38 @@ void derivatives(struct cfdata *data, double *var)
 {
     int i;
     for (i = 0; i < data->datalen; i++) {
+        double xi = data->x[i];
         switch (data->model) {
             case expdecay:
                 data->d1[i] = 1.0;
-                data->d2[i] = exp(-var[2]*data->x[i]);
-                data->d3[i] = -data->x[i]*var[1]*exp(-var[2]*data->x[i]);
+                data->d2[i] = exp(-var[2]*xi);
+                data->d3[i] = -xi*var[1]*exp(-var[2]*xi);
+                break;
+            case gaussian:
+                data->d1[i] = 1.0;
+                data->d2[i] = exp(-(xi - var[2])*(xi - var[2])/
+                                  (var[3] * var[3]));
+                data->d3[i] = 2*((xi - var[2])/(var[3] * var[3]))*var[1]*\
+                              exp(-(xi - var[2])*(xi - var[2])/
+                                  (var[3] * var[3]));
+                data->d4[i] = 2*((xi - var[2])*(xi - var[2])/
+                                 (var[3]*var[3]*var[3]))*var[1]*\
+                              exp(-(xi - var[2])*(xi - var[2])/
+                                  (var[3] * var[3]));
                 break;
             case ic50:
-                data->d1[i] = (-(1/(1 + pow((var[1]/data->x[i]), var[2]))));
-                data->d2[i] = ((var[0] * var[2] * pow((var[1]/data->x[i]), 
+                data->d1[i] = (-(1/(1 + pow((var[1]/xi), var[2]))));
+                data->d2[i] = ((var[0] * var[2] * pow((var[1]/xi), 
                                                       (var[2] - 1))) / 
-                               (data->x[i] * pow((1 + (pow((var[1]/data->x[i]), 
+                               (xi * pow((1 + (pow((var[1]/xi), 
                                                            var[2]))), 2)));
-                data->d3[i] = ((var[0] * pow((var[1]/data->x[i]), var[2]) * 
-                                log((var[1]/data->x[i]))) / 
-                               (pow((1 + pow((var[1]/data->x[i]), var[2])), 2)));
+                data->d3[i] = ((var[0] * pow((var[1]/xi), var[2]) * 
+                                log((var[1]/xi))) / 
+                               (pow((1 + pow((var[1]/xi), var[2])), 2)));
                 break;
             case mm:
-                data->d1[i] = (data->x[i] / (var[1] + data->x[i]));
-                data->d2[i] = (-(var[0] * data->x[i]) / pow((var[1] + data->x[i]), 
-                                                            2.0));
+                data->d1[i] = (xi / (var[1] + xi));
+                data->d2[i] = (-(var[0] * xi) / pow((var[1] + xi), 2.0));
                 break;
             default:
                 exit(3);
@@ -107,12 +128,19 @@ void get_f(gsl_vector *fvect, struct cfdata *data, double *var)
 void get_jac(double *jac, struct cfdata *data, double *var)
 {
     derivatives(data, var);
-    int i, j, k;
+    int i, j, k, l;
     i = 0;
     j = data->datalen;
     k = 2 * data->datalen;
-    for (i = 0; i < data->datalen; i++, j++, k++) {
+    l = 3 * data->datalen;
+    for (i = 0; i < data->datalen; i++, j++, k++, l++) {
         switch (data->model) {
+            case gaussian:
+                jac[i] = -data->d1[i];
+                jac[j] = -data->d2[i];
+                jac[k] = -data->d3[i];
+                jac[l] = -data->d4[i];
+                break;
             case expdecay:
             case ic50:
                 jac[i] = -data->d1[i];
@@ -288,8 +316,8 @@ void levenberg_marquardt(struct cfdata *data, double *var)
         }
         printf("iter %3d: var =", k);
         for (i = 0; i < data->varlen; i++)
-            printf(" %8.5f", var[i]);
-        printf(", |f(x)| = %10.5g\n", gsl_blas_dnrm2(f));
+            printf(" %7.4f", var[i]);
+        printf(", |f(x)| = %9.4g\n", gsl_blas_dnrm2(f));
     }
 
     printf("\nFitted Parameters:\n");
@@ -298,6 +326,12 @@ void levenberg_marquardt(struct cfdata *data, double *var)
             printf("\t     a:\t%8.5f\n"
                    "\t     b:\t%8.5f\n"
                    "\tlambda:\t%8.5f\n\n", var[0], var[1], var[2]);
+            break;
+        case gaussian:
+            printf("\t    a:\t%8.5f\n"
+                   "\t    b:\t%8.5f\n"
+                   "\t   mu:\t%8.5f\n"
+                   "\tsigma:\t%8.5f\n\n", var[0], var[1], var[2], var[3]);
             break;
         case ic50:
             printf("\tdelta:\t%8.5f\n"
@@ -383,6 +417,18 @@ void output(char *filename, struct cfdata *data, double *var)
                     "plot \"%s\" using 1:2 with points 4,"
                     " f(x) with lines 22\n", 
                     outplot, var[0], var[1], var[2], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
+        case gaussian:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = %f + (%f*exp(-((x - %f)**2)/(%f**2)))\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], var[2], var[3], 
                     minx, maxx, miny, maxy, outdata);
             break;
         case ic50:

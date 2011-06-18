@@ -15,6 +15,7 @@
 
 enum Models {
     expdecay,
+    gaussian,
     ic50, 
     mm
 };
@@ -30,6 +31,7 @@ struct cfdata {
     double *d1;  // partial derivative of var[0] wrt y for xi
     double *d2;  // ...
     double *d3;  // ..., not used for mm model
+    double *d4;
 };
 
 void usage(char **argv);

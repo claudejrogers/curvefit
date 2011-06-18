@@ -19,12 +19,12 @@ int main (int argc, char **argv)
     FILE *fp;
     char *filename = NULL;
     struct cfdata values;
-    double var[3];
-    var[0] = var[1] = var[2] = 1.0;
+    double var[4];
+    var[0] = var[1] = var[2] = var[3] = 1.0;
 
     opterr = 0;
 
-    while ((c = getopt(argc, argv, "f:m:x:y:z:h")) != -1)
+    while ((c = getopt(argc, argv, "f:m:a:b:c:d:h")) != -1)
         switch (c)
     {
         case 'f':
@@ -33,6 +33,8 @@ int main (int argc, char **argv)
         case 'm':
             if (!strcmp(optarg, "expdecay"))
                 values.model = expdecay;
+            else if (!strcmp(optarg, "gaussian"))
+                values.model = gaussian;
             else if (!strcmp(optarg, "ic50"))
                 values.model = ic50;
             else if (!strcmp(optarg, "mm"))
@@ -43,14 +45,17 @@ int main (int argc, char **argv)
                 return 1;
             }
             break;
-        case 'x':
+        case 'a':
             var[0] = (double)atof(optarg);
             break;
-        case 'y':
+        case 'b':
             var[1] = (double)atof(optarg);
             break;
-        case 'z':
+        case 'c':
             var[2] = (double)atof(optarg);
+            break;
+        case 'd':
+            var[3] = (double)atof(optarg);
             break;
         case 'h':
             usage(argv);
@@ -80,6 +85,9 @@ int main (int argc, char **argv)
     values.datalen = len;
     
     switch (values.model) {
+        case gaussian:
+            values.varlen = 4;
+            break;
         case expdecay:
         case ic50:
             values.varlen = 3;
@@ -100,6 +108,7 @@ int main (int argc, char **argv)
     double *d1v;
     double *d2v;
     double *d3v;
+    double *d4v;
 
     xv = (double *) malloc(sizeof(double)*len);
     yv = (double *) malloc(sizeof(double)*len);
@@ -107,6 +116,7 @@ int main (int argc, char **argv)
     d1v = (double *) malloc(sizeof(double)*len);
     d2v = (double *) malloc(sizeof(double)*len);
     d3v = (double *) malloc(sizeof(double)*len);
+    d4v = (double *) malloc(sizeof(double)*len);
 
     values.x = xv;
     values.y = yv;
@@ -114,6 +124,7 @@ int main (int argc, char **argv)
     values.d1 = d1v;
     values.d2 = d2v;
     values.d3 = d3v;
+    values.d4 = d4v;
 
     float tempX, tempY;
     for (i = 0; fscanf(fp, "%f\t%f", &tempX, &tempY) != EOF; i++){
@@ -133,6 +144,7 @@ int main (int argc, char **argv)
     free((void *) d1v);
     free((void *) d2v);
     free((void *) d3v);
+    free((void *) d4v);
 
     return 0;
 }

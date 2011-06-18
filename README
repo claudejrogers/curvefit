@@ -1,21 +1,26 @@
-curvefit - a command line Levenberg-Marquardt solver for exponential decay 
-ic50 and Michaelis-Menten data.
+curvefit - a command line Levenberg-Marquardt solver.
 
-The exponential decay model is based on the equation:
+Supported Models:
 
-y = a + b * exp(-lambda * x)
+    - Exponential decay:
 
-The ic50 model is based on the equation:
+      y = a + b * exp(-lambda * x)
 
-y = 1 - (delta / (1 + (ic50 / x)^hill))
+    - Gaussian function:
 
-The Michaelis-Menten model is based on the equation:
+      y = a + b * exp(-mu^2/sigma^2)
 
-y = Vmax * x / (Km + x)
+    - Dose response (ic50):
 
-The program finds values for delta, ic50, and hill or Vmax, and Km
-that minimizes the difference between input and fitted values of y
-for all values of x.
+      y = 1 - (delta / (1 + (ic50 / x)^hill))
+
+    - Michaelis-Menten:
+
+      y = Vmax * x / (Km + x)
+
+The program finds values for the parameters of the model function
+(e.g. a, b, c, d) that minimizes the difference between input and 
+fitted values of y for all values of x.
 
 Requirements: GNU Scientific Library (http://www.gnu.org/software/gsl/)
 
@@ -30,18 +35,23 @@ Required Arguments:
 -f      Path to input data. Must be a tab delimited text file of (x, y) value 
         pairs. No other data should be included in the file.
 
--m      Desired model. Valid options are ic50 and mm.
+-m      Desired model. Valid options are: 
+        expdecay    -   Exponential Decay
+        gaussian    -   Gaussian
+        ic50        -   Dose Response
+        mm          -   Michaelis-Menten
 
 Optional Arguments:
 
--xyz    Specify initial values for the parameters to fit. Default values are
+-abcd   Specify initial values for the parameters to fit. Default values are
         1.0.
 
-        flag    expdecay    ic50     mm
-        ------------------------------------
-        -x      a           delta    Vmax
-        -y      b           ic50     Km
-        -z      lambda      hill     ignored
+        flag    expdecay  gaussian  ic50     mm
+        -----------------------------------------
+        -a      a         a         delta    Vmax
+        -b      b         b         ic50     Km
+        -c      lambda    mu        hill     N/A
+        -d      N/A       sigma     N/A      N/A
 
 TODO:
 1. Add more models
