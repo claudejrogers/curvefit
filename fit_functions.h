@@ -14,6 +14,7 @@
 #include <gsl/gsl_multifit_nlin.h>
 
 enum Models {
+    expdecay,
     ic50, 
     mm
 };

@@ -31,7 +31,9 @@ int main (int argc, char **argv)
             filename = optarg;
             break;
         case 'm':
-            if (!strcmp(optarg, "ic50"))
+            if (!strcmp(optarg, "expdecay"))
+                values.model = expdecay;
+            else if (!strcmp(optarg, "ic50"))
                 values.model = ic50;
             else if (!strcmp(optarg, "mm"))
                 values.model = mm;
@@ -78,6 +80,7 @@ int main (int argc, char **argv)
     values.datalen = len;
     
     switch (values.model) {
+        case expdecay:
         case ic50:
             values.varlen = 3;
             break;

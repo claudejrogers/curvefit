@@ -1,5 +1,9 @@
-curvefit - a command line Levenberg-Marquardt solver for ic50 and
-Michaelis-Menten data.
+curvefit - a command line Levenberg-Marquardt solver for exponential decay 
+ic50 and Michaelis-Menten data.
+
+The exponential decay model is based on the equation:
+
+y = a + b * exp(-lambda * x)
 
 The ic50 model is based on the equation:
 
@@ -33,11 +37,11 @@ Optional Arguments:
 -xyz    Specify initial values for the parameters to fit. Default values are
         1.0.
 
-        flag    ic50    mm
-        -----------------------
-        -x      delta   Vmax
-        -y      ic50    Km
-        -z      hill    ignored
+        flag    expdecay    ic50     mm
+        ------------------------------------
+        -x      a           delta    Vmax
+        -y      b           ic50     Km
+        -z      lambda      hill     ignored
 
 TODO:
 1. Add more models

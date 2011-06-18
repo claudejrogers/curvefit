@@ -21,7 +21,7 @@ void usage(char **argv)
            "INPUT:\nRequired. Provide the filepath to the input data.\n"
            "\t-f FILENAME\tFile must contain tab delimited x and y data\n"
            "MODEL:\nRequired. Enter model name.\n"
-           "\t-m MODEL\tSupported models are \"ic50\" and \"mm\"\n"
+           "\t-m MODEL\tSupported models are \"expdecay\" \"ic50\" and \"mm\"\n"
            "INITIAL GUESS:\nOptional. Provide values for fit parameters. "
            "Default values are 1.0.\n\t-x VALUE\tValue for max-min or Vmax.\n"
            "\t-y VALUE\tValue for ic50 or Km.\n\t-z VALUE\tValue for Hill "
@@ -47,6 +47,9 @@ void equation(struct cfdata *data, double *var)
     int i;
     for (i = 0; i < data->datalen; i++) {
         switch (data->model) {
+            case expdecay:
+                data->m[i] = var[0] + var[1] * exp(-var[2] * data->x[i]);
+                break;
             case ic50:
                 data->m[i] = (1 - (var[0]/(1 + pow((var[1]/data->x[i]), var[2]))));
                 break;
@@ -64,6 +67,11 @@ void derivatives(struct cfdata *data, double *var)
     int i;
     for (i = 0; i < data->datalen; i++) {
         switch (data->model) {
+            case expdecay:
+                data->d1[i] = 1.0;
+                data->d2[i] = exp(-var[2]*data->x[i]);
+                data->d3[i] = -data->x[i]*var[1]*exp(-var[2]*data->x[i]);
+                break;
             case ic50:
                 data->d1[i] = (-(1/(1 + pow((var[1]/data->x[i]), var[2]))));
                 data->d2[i] = ((var[0] * var[2] * pow((var[1]/data->x[i]), 
@@ -105,6 +113,7 @@ void get_jac(double *jac, struct cfdata *data, double *var)
     k = 2 * data->datalen;
     for (i = 0; i < data->datalen; i++, j++, k++) {
         switch (data->model) {
+            case expdecay:
             case ic50:
                 jac[i] = -data->d1[i];
                 jac[j] = -data->d2[i];
@@ -285,6 +294,11 @@ void levenberg_marquardt(struct cfdata *data, double *var)
 
     printf("\nFitted Parameters:\n");
     switch (data->model) {
+        case expdecay:
+            printf("\t     a:\t%8.5f\n"
+                   "\t     b:\t%8.5f\n"
+                   "\tlambda:\t%8.5f\n\n", var[0], var[1], var[2]);
+            break;
         case ic50:
             printf("\tdelta:\t%8.5f\n"
                    "\t ic50:\t%8.5f\n"
@@ -359,6 +373,19 @@ void output(char *filename, struct cfdata *data, double *var)
     fscript = fopen(outscript, "w");
     
     switch (data->model) {
+        case expdecay:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = %f + (%f*exp(-%f*x))\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "set log x\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], var[2], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
         case ic50:
             fprintf(fscript, 
                     "set terminal png\n"
