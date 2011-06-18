@@ -380,7 +380,6 @@ void output(char *filename, struct cfdata *data, double *var)
                     "f(x) = %f + (%f*exp(-%f*x))\n"
                     "set xrange [%f:%f]\n"
                     "set yrange [%f:%f]\n"
-                    "set log x\n"
                     "plot \"%s\" using 1:2 with points 4,"
                     " f(x) with lines 22\n", 
                     outplot, var[0], var[1], var[2], 
