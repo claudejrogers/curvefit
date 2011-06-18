@@ -18,19 +18,30 @@ void usage(char **argv)
      * This needs to be improved as models are added.
      */
     
-    printf("\nUsage: %s -f <filename> -m <model> [-x <var1> -y <var2> -z "
-           "<var2>]\n"
+    printf("\nUsage: %s -f <filename> -m <model> [-a <var1> -b <var2> -c "
+           "<var3> -d <var4>]\n"
            "\nFit experimental data to either an ic50 or Michaelis-Menten " 
            "model\n\n"
            "INPUT:\nRequired. Provide the filepath to the input data.\n"
-           "\t-f FILENAME\tFile must contain tab delimited x and y data\n"
+           "   -f FILENAME   File must contain tab delimited x and y data\n"
            "MODEL:\nRequired. Enter model name.\n"
-           "\t-m MODEL\tSupported models are \"expdecay\" \"ic50\" and \"mm\"\n"
-           "INITIAL GUESS:\nOptional. Provide values for fit parameters. "
-           "Default values are 1.0.\n\t-a VALUE\tValue for max-min or Vmax.\n"
-           "\t-b VALUE\tValue for ic50 or Km.\n\t-c VALUE\tValue for Hill "
-           "coefficient.\n\nOUTPUT:\nUpdated values for the variables are "
-           "displayed for each iteration,\nalong with |f(x)|.\n\n", argv[0]);
+           "   -m MODEL      Supported models:\n"
+           "                 expdecay  -  Exponential decay\n"
+           "                 gaussian  -  Gaussion function\n"
+           "                 hill      -  Hill equation\n"
+           "                 ic50      -  Dose response\n"
+           "                 mm        -  Michaelis-Menten\n"
+           "INITIAL GUESS:\n"
+           "Optional. Provide values for fit parameters. "
+           "Default values are 1.0.\n"
+           "                 expdecay  gaussian  hill   ic50   mm\n"
+           "   -a VALUE      a         a         delta  delta  Vmax\n"
+           "   -b VALUE      b         b         ic50   ic50   Km\n"
+           "   -c VALUE      lambda    mu        hill   hill   N/A\n"
+           "   -d VALUE      N/A       sigma     N/A    N/A    N/A\n"
+           "\nOUTPUT:\n"
+           "Updated values for the variables are displayed for each "
+           "iteration,\nalong with |f(x)|.\n\n", argv[0]);
 }
 
 int filelines(char *filepath)
@@ -58,6 +69,9 @@ void equation(struct cfdata *data, double *var)
             case gaussian:
                 data->m[i] = var[0] + var[1]*exp(-(xi - var[2])*(xi - var[2])/
                                                  (var[3] * var[3]));
+                break;
+            case hill:
+                data->m[i] = (var[0] / (1 + pow((var[1]/xi), var[2])));
                 break;
             case ic50:
                 data->m[i] = (1 - (var[0]/(1 + pow((var[1]/xi), var[2]))));
@@ -93,6 +107,15 @@ void derivatives(struct cfdata *data, double *var)
                                  (var[3]*var[3]*var[3]))*var[1]*\
                               exp(-(xi - var[2])*(xi - var[2])/
                                   (var[3] * var[3]));
+                break;
+            case hill:
+                data->d1[i] = (1/(1 + pow((var[1]/xi), var[2])));
+                data->d2[i] = ((-var[0] * var[2] * pow(var[1], (var[2] - 1)) *
+                                pow(xi, var[2])) / 
+                               pow((pow(var[1], var[2]) + pow(xi, var[2])), 2));
+                data->d3[i] = ((var[0]*pow((var[1] * xi), var[2]) * 
+                                log(xi/var[1]))/pow((pow(var[1], var[2]) + 
+                                                     pow(xi, var[2])), 2));
                 break;
             case ic50:
                 data->d1[i] = (-(1/(1 + pow((var[1]/xi), var[2]))));
@@ -142,6 +165,7 @@ void get_jac(double *jac, struct cfdata *data, double *var)
                 jac[l] = -data->d4[i];
                 break;
             case expdecay:
+            case hill:
             case ic50:
                 jac[i] = -data->d1[i];
                 jac[j] = -data->d2[i];
@@ -333,6 +357,7 @@ void levenberg_marquardt(struct cfdata *data, double *var)
                    "\t   mu:\t%8.5f\n"
                    "\tsigma:\t%8.5f\n\n", var[0], var[1], var[2], var[3]);
             break;
+        case hill:
         case ic50:
             printf("\tdelta:\t%8.5f\n"
                    "\t ic50:\t%8.5f\n"
@@ -429,6 +454,19 @@ void output(char *filename, struct cfdata *data, double *var)
                     "plot \"%s\" using 1:2 with points 4,"
                     " f(x) with lines 22\n", 
                     outplot, var[0], var[1], var[2], var[3], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
+        case hill:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = (%f/(1 + (%f/x)**%f))\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "set log x\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], var[2],
                     minx, maxx, miny, maxy, outdata);
             break;
         case ic50:

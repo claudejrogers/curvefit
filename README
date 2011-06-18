@@ -1,4 +1,5 @@
-curvefit - a command line Levenberg-Marquardt solver.
+curvefit - a command line tool for nonlinear regression analysis using the
+           Levenberg-Marquardt algorithm.
 
 Supported Models:
 
@@ -9,6 +10,10 @@ Supported Models:
     - Gaussian function:
 
       y = a + b * exp(-mu^2/sigma^2)
+
+    - Hill equation (allosteric kinetics)
+
+      y = delta / (1 + (ic50 / x)^hill)
 
     - Dose response (ic50):
 
@@ -28,7 +33,7 @@ A very basic makefile is included.
 
 The command to run the program is
 
-./curvefit -f /path/to/input/data -m <model> [-x <float> -y <float> -z <float>]
+./curvefit -f datafile -m <model> [-a <float> -b <float> -c <float> -d <float>]
 
 Required Arguments:
 
@@ -38,6 +43,7 @@ Required Arguments:
 -m      Desired model. Valid options are: 
         expdecay    -   Exponential Decay
         gaussian    -   Gaussian
+        hill        -   Hill equation
         ic50        -   Dose Response
         mm          -   Michaelis-Menten
 
@@ -46,12 +52,12 @@ Optional Arguments:
 -abcd   Specify initial values for the parameters to fit. Default values are
         1.0.
 
-        flag    expdecay  gaussian  ic50     mm
-        -----------------------------------------
-        -a      a         a         delta    Vmax
-        -b      b         b         ic50     Km
-        -c      lambda    mu        hill     N/A
-        -d      N/A       sigma     N/A      N/A
+        flag    expdecay  gaussian  hill     ic50     mm
+        --------------------------------------------------
+        -a      a         a         delta    delta    Vmax
+        -b      b         b         ic50     ic50     Km
+        -c      lambda    mu        hill     hill     N/A
+        -d      N/A       sigma     N/A      N/A      N/A
 
 TODO:
 1. Add more models

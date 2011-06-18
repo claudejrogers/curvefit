@@ -16,12 +16,12 @@
 enum Models {
     expdecay,
     gaussian,
+    hill,
     ic50, 
     mm
 };
 
 struct cfdata {
-    //char *model; // TODO: Replace with enum once more models get added
     enum Models model;
     int varlen;  // number of parameters for given model
     int datalen; // number of data points
@@ -31,7 +31,7 @@ struct cfdata {
     double *d1;  // partial derivative of var[0] wrt y for xi
     double *d2;  // ...
     double *d3;  // ..., not used for mm model
-    double *d4;
+    double *d4;  // only used in gaussian model
 };
 
 void usage(char **argv);

@@ -35,6 +35,8 @@ int main (int argc, char **argv)
                 values.model = expdecay;
             else if (!strcmp(optarg, "gaussian"))
                 values.model = gaussian;
+            else if (!strcmp(optarg, "hill"))
+                values.model = hill;
             else if (!strcmp(optarg, "ic50"))
                 values.model = ic50;
             else if (!strcmp(optarg, "mm"))
@@ -63,7 +65,9 @@ int main (int argc, char **argv)
         case '?':
             if (optopt == 'f' || optopt == 'm')
                 fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-            else if ((optopt != 'x' || optopt != 'y' || optopt != 'z') && isprint(optopt))
+            else if ((optopt != 'x' || 
+                      optopt != 'y' || 
+                      optopt != 'z') && isprint(optopt))
                 fprintf (stderr, "Unknown option `-%c'.\n", optopt);
             else
                 fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
@@ -89,6 +93,7 @@ int main (int argc, char **argv)
             values.varlen = 4;
             break;
         case expdecay:
+        case hill:
         case ic50:
             values.varlen = 3;
             break;
