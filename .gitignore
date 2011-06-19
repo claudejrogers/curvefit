@@ -1,3 +1,6 @@
 *.o
 .DS_Store
 curvefit
+config.sh
+examples/*.dat
+examples/*.plt

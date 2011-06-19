@@ -14,10 +14,6 @@
 
 void usage(char **argv)
 {
-    /*
-     * This needs to be improved as models are added.
-     */
-    
     printf("\nUsage: %s -f <filename> -m <model> [-a <var1> -b <var2> -c "
            "<var3> -d <var4>]\n"
            "\nFit experimental data to either an ic50 or Michaelis-Menten " 
@@ -31,14 +27,15 @@ void usage(char **argv)
            "                 hill      -  Hill equation\n"
            "                 ic50      -  Dose response\n"
            "                 mm        -  Michaelis-Menten\n"
+           "                 modsin    -  Sine wave\n"
            "INITIAL GUESS:\n"
            "Optional. Provide values for fit parameters. "
            "Default values are 1.0.\n"
-           "                 expdecay  gaussian  hill   ic50   mm\n"
-           "   -a VALUE      a         a         delta  delta  Vmax\n"
-           "   -b VALUE      b         b         ic50   ic50   Km\n"
-           "   -c VALUE      lambda    mu        hill   hill   N/A\n"
-           "   -d VALUE      N/A       sigma     N/A    N/A    N/A\n"
+           "                 expdecay  gaussian  hill   ic50   mm    modsin\n"
+           "   -a VALUE      a         a         delta  delta  Vmax  a\n"
+           "   -b VALUE      b         b         ic50   ic50   Km    b\n"
+           "   -c VALUE      lambda    mu        hill   hill   N/A   c\n"
+           "   -d VALUE      N/A       sigma     N/A    N/A    N/A   N/A\n"
            "\nOUTPUT:\n"
            "Updated values for the variables are displayed for each "
            "iteration,\nalong with |f(x)|.\n\n", argv[0]);
@@ -78,6 +75,9 @@ void equation(struct cfdata *data, double *var)
                 break;
             case mm:
                 data->m[i] = ((var[0] * xi) / (var[1] + xi));
+                break;
+            case modsin:
+                data->m[i] = var[0] * sin(M_PI * (xi - var[1]) / var[2]);
                 break;
             default:
                 exit(2);
@@ -131,6 +131,14 @@ void derivatives(struct cfdata *data, double *var)
                 data->d1[i] = (xi / (var[1] + xi));
                 data->d2[i] = (-(var[0] * xi) / pow((var[1] + xi), 2.0));
                 break;
+            case modsin:
+                data->d1[i] = sin(M_PI * (xi - var[1]) / var[2]);
+                data->d2[i] = (-var[0] * M_PI * 
+                               cos(M_PI * (xi - var[1]) / var[2])) / var[2];
+                data->d3[i] = ((var[0] * M_PI * (var[1] - xi) 
+                                * cos(M_PI * (xi - var[1]) / var[2])) / 
+                               pow(var[2], 2));
+                break;               
             default:
                 exit(3);
         }
@@ -167,6 +175,7 @@ void get_jac(double *jac, struct cfdata *data, double *var)
             case expdecay:
             case hill:
             case ic50:
+            case modsin:
                 jac[i] = -data->d1[i];
                 jac[j] = -data->d2[i];
                 jac[k] = -data->d3[i];
@@ -312,7 +321,7 @@ void levenberg_marquardt(struct cfdata *data, double *var)
 
         if (gsl_blas_dnrm2(&H.vector) <= NORM_H) {
             printf("var converged\n");
-            k = MAX_ITER;
+            break;
         }
 
         get_f(new_f, data, new_var);
@@ -366,6 +375,11 @@ void levenberg_marquardt(struct cfdata *data, double *var)
         case mm:
             printf("\tVmax:\t%8.5f\n"
                    "\t  Km:\t%8.5f\n\n", var[0], var[1]);
+            break;
+        case modsin:
+            printf("\ta:\t%8.5f\n"
+                   "\tb:\t%8.5f\n"
+                   "\tc:\t%8.5f\n\n", var[0], var[1], var[2]);
             break;
         default:
             exit(5);
@@ -494,10 +508,22 @@ void output(char *filename, struct cfdata *data, double *var)
                     outplot, var[0], var[1], 
                     minx, maxx, miny, maxy, outdata);
             break;
+        case modsin:
+            fprintf(fscript, 
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = %f*sin(pi*(x - %f)/%f)\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n", 
+                    outplot, var[0], var[1], var[2], 
+                    minx, maxx, miny, maxy, outdata);
+            break;
         default:
             exit(6);
     }
-
+    
     fclose(fscript);
     
     free((void *) outdata);

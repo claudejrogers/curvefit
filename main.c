@@ -41,6 +41,8 @@ int main (int argc, char **argv)
                 values.model = ic50;
             else if (!strcmp(optarg, "mm"))
                 values.model = mm;
+            else if (!strcmp(optarg, "modsin"))
+                values.model = modsin;
             else {
                 fprintf(stderr, "%s is not a supported model.\n", optarg);
                 usage(argv);
@@ -95,6 +97,7 @@ int main (int argc, char **argv)
         case expdecay:
         case hill:
         case ic50:
+        case modsin:
             values.varlen = 3;
             break;
         case mm:

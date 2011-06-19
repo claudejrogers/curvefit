@@ -18,7 +18,8 @@ enum Models {
     gaussian,
     hill,
     ic50, 
-    mm
+    mm,
+    modsin
 };
 
 struct cfdata {

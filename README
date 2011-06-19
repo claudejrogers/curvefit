@@ -23,6 +23,10 @@ Supported Models:
 
       y = Vmax * x / (Km + x)
 
+    - Modified sine wave
+
+      y = a*sin(pi*(x - b)/c)
+
 The program finds values for the parameters of the model function
 (e.g. a, b, c, d) that minimizes the difference between input and 
 fitted values of y for all values of x.
@@ -46,18 +50,19 @@ Required Arguments:
         hill        -   Hill equation
         ic50        -   Dose Response
         mm          -   Michaelis-Menten
+        modsin      -   Sine wave
 
 Optional Arguments:
 
 -abcd   Specify initial values for the parameters to fit. Default values are
         1.0.
 
-        flag    expdecay  gaussian  hill     ic50     mm
-        --------------------------------------------------
-        -a      a         a         delta    delta    Vmax
-        -b      b         b         ic50     ic50     Km
-        -c      lambda    mu        hill     hill     N/A
-        -d      N/A       sigma     N/A      N/A      N/A
+        flag    expdecay  gaussian  hill     ic50     mm      modsin
+        ------------------------------------------------------------
+        -a      a         a         delta    delta    Vmax    a
+        -b      b         b         ic50     ic50     Km      b
+        -c      lambda    mu        hill     hill     N/A     c
+        -d      N/A       sigma     N/A      N/A      N/A     N/A
 
 TODO:
 1. Add more models
