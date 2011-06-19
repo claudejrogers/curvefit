@@ -22,6 +22,7 @@ void usage(char **argv)
            "   -f FILENAME   File must contain tab delimited x and y data\n"
            "MODEL:\nRequired. Enter model name.\n"
            "   -m MODEL      Supported models:\n"
+           "                 boltzmann -  Boltzmann sigmoid\n"
            "                 expdecay  -  Exponential decay\n"
            "                 gaussian  -  Gaussion function\n"
            "                 hill      -  Hill equation\n"
@@ -31,11 +32,17 @@ void usage(char **argv)
            "INITIAL GUESS:\n"
            "Optional. Provide values for fit parameters. "
            "Default values are 1.0.\n"
-           "                 expdecay  gaussian  hill   ic50   mm    modsin\n"
-           "   -a VALUE      a         a         delta  delta  Vmax  a\n"
-           "   -b VALUE      b         b         ic50   ic50   Km    b\n"
-           "   -c VALUE      lambda    mu        hill   hill   N/A   c\n"
-           "   -d VALUE      N/A       sigma     N/A    N/A    N/A   N/A\n"
+           "                 boltzmann expdecay  gaussian  hill   ic50   mm\n"    
+           "   -a VALUE      min       a         a         delta  delta  Vmax\n"  
+           "   -b VALUE      max       b         b         ic50   ic50   Km\n"
+           "   -c VALUE      v50       lambda    mu        hill   hill   N/A\n"
+           "   -d VALUE      slope     N/A       sigma     N/A    N/A    N/A\n"
+           "\n"
+           "                 modsin\n"
+           "                 a\n"
+           "                 b\n"
+           "                 c\n"
+           "                 N/A\n"
            "\nOUTPUT:\n"
            "Updated values for the variables are displayed for each "
            "iteration,\nalong with |f(x)|.\n\n", argv[0]);
@@ -60,6 +67,10 @@ void equation(struct cfdata *data, double *var)
     for (i = 0; i < data->datalen; i++) {
         double xi = data->x[i];
         switch (data->model) {
+            case boltzmann:
+                data->m[i] = var[0] + ((var[1] - var[0]) / 
+                                       (1 + exp((var[2] - xi)/var[3])));
+                break;
             case expdecay:
                 data->m[i] = var[0] + var[1] * exp(-var[2] * xi);
                 break;
@@ -91,6 +102,18 @@ void derivatives(struct cfdata *data, double *var)
     for (i = 0; i < data->datalen; i++) {
         double xi = data->x[i];
         switch (data->model) {
+            case boltzmann:
+                data->d1[i] = 1 - (1 / (1 + exp((var[2] - xi) / var[3])));
+                data->d2[i] = 1 / (1 + exp((var[2] - xi) / var[3]));
+                data->d3[i] = (((var[0] - var[1]) * 
+                                exp((var[2] + xi) / var[3])) / 
+                               (var[3] * pow((exp(var[2] / var[3]) + 
+                                             exp(xi / var[3])), 2)));
+                data->d4[i] = (((var[1] - var[0]) * (var[2] - xi) * 
+                                exp((var[2] - xi) / var[3])) / 
+                               (var[3] * var[3] * 
+                                pow((exp((var[2] - xi) / var[3]) + 1), 2)));
+                break;
             case expdecay:
                 data->d1[i] = 1.0;
                 data->d2[i] = exp(-var[2]*xi);
@@ -166,6 +189,7 @@ void get_jac(double *jac, struct cfdata *data, double *var)
     l = 3 * data->datalen;
     for (i = 0; i < data->datalen; i++, j++, k++, l++) {
         switch (data->model) {
+            case boltzmann:
             case gaussian:
                 jac[i] = -data->d1[i];
                 jac[j] = -data->d2[i];
@@ -355,6 +379,12 @@ void levenberg_marquardt(struct cfdata *data, double *var)
 
     printf("\nFitted Parameters:\n");
     switch (data->model) {
+        case boltzmann:
+            printf("\t  min:\t%8.5f\n"
+                   "\t  max:\t%8.5f\n"
+                   "\t  v50:\t%8.5f\n"
+                   "\tslope:\t%8.5f\n\n", var[0], var[1], var[2], var[3]);
+            break;
         case expdecay:
             printf("\t     a:\t%8.5f\n"
                    "\t     b:\t%8.5f\n"
@@ -446,6 +476,19 @@ void output(char *filename, struct cfdata *data, double *var)
     fscript = fopen(outscript, "w");
     
     switch (data->model) {
+        case boltzmann:
+            fprintf(fscript,
+                    "set terminal png\n"
+                    "set output \"%s\"\n"
+                    "f(x) = %f + (%f - %f)/(1 + exp((%f - x)/%f))\n"
+                    "set xrange [%f:%f]\n"
+                    "set yrange [%f:%f]\n"
+                    "set log x\n"
+                    "plot \"%s\" using 1:2 with points 4,"
+                    " f(x) with lines 22\n",
+                    outplot, var[0], var[1], var[0], var[2], var[3],
+                    minx, maxx, miny, maxy, outdata);
+            break;
         case expdecay:
             fprintf(fscript, 
                     "set terminal png\n"

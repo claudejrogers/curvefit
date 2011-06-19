@@ -31,7 +31,9 @@ int main (int argc, char **argv)
             filename = optarg;
             break;
         case 'm':
-            if (!strcmp(optarg, "expdecay"))
+            if (!strcmp(optarg, "boltzmann"))
+                values.model = boltzmann;
+            else if (!strcmp(optarg, "expdecay"))
                 values.model = expdecay;
             else if (!strcmp(optarg, "gaussian"))
                 values.model = gaussian;
@@ -91,6 +93,7 @@ int main (int argc, char **argv)
     values.datalen = len;
     
     switch (values.model) {
+        case boltzmann:
         case gaussian:
             values.varlen = 4;
             break;

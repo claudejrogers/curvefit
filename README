@@ -3,6 +3,10 @@ curvefit - a command line tool for nonlinear regression analysis using the
 
 Supported Models:
 
+    - Boltzmann sigmoid:
+
+      y = min + ((max - min)/(1 + exp((v50 - x)/slope)))
+
     - Exponential decay:
 
       y = a + b * exp(-lambda * x)
@@ -45,7 +49,9 @@ Required Arguments:
         pairs. No other data should be included in the file.
 
 -m      Desired model. Valid options are: 
-        expdecay    -   Exponential Decay
+
+        boltzmann   -   Boltzmann sigmoid
+        expdecay    -   Exponential decay
         gaussian    -   Gaussian
         hill        -   Hill equation
         ic50        -   Dose Response
@@ -57,12 +63,12 @@ Optional Arguments:
 -abcd   Specify initial values for the parameters to fit. Default values are
         1.0.
 
-        flag    expdecay  gaussian  hill     ic50     mm      modsin
-        ------------------------------------------------------------
-        -a      a         a         delta    delta    Vmax    a
-        -b      b         b         ic50     ic50     Km      b
-        -c      lambda    mu        hill     hill     N/A     c
-        -d      N/A       sigma     N/A      N/A      N/A     N/A
+        flag    boltzmann expdecay  gaussian  hill     ic50     mm      modsin
+        ----------------------------------------------------------------------
+        -a      min       a         a         delta    delta    Vmax    a
+        -b      max       b         b         ic50     ic50     Km      b
+        -c      v50       lambda    mu        hill     hill     N/A     c
+        -d      slope     N/A       sigma     N/A      N/A      N/A     N/A
 
 TODO:
 1. Add more models
