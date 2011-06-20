@@ -1,8 +1,8 @@
-curvefit - a command line tool for nonlinear regression analysis using the
-           Levenberg-Marquardt algorithm.
+#curvefit#
+a command line tool for nonlinear regression analysis using the 
+Levenberg-Marquardt algorithm.
 
-Supported Models:
-
+##Supported Models:##
     - Boltzmann sigmoid:
 
       y = min + ((max - min)/(1 + exp((v50 - x)/slope)))
@@ -35,16 +35,16 @@ The program finds values for the parameters of the model function
 (e.g. a, b, c, d) that minimizes the difference between input and 
 fitted values of y for all values of x.
 
-Requirements: GNU Scientific Library (http://www.gnu.org/software/gsl/)
+##Requirements:##
+[GNU Scientific Library](http://www.gnu.org/software/gsl/)
 
-A very basic makefile is included.
 
+##Usage:##
 The command to run the program is
 
-./curvefit -f datafile -m <model> [-a <float> -b <float> -c <float> -d <float>]
+`./curvefit -f datafile -m <model> [-a <float> -b <float> -c <float> -d <float>]`
 
-Required Arguments:
-
+##Required Arguments:##
 -f      Path to input data. Must be a tab delimited text file of (x, y) value 
         pairs. No other data should be included in the file.
 
@@ -58,8 +58,7 @@ Required Arguments:
         mm          -   Michaelis-Menten
         modsin      -   Sine wave
 
-Optional Arguments:
-
+##Optional Arguments:##
 -abcd   Specify initial values for the parameters to fit. Default values are
         1.0.
 
@@ -70,7 +69,7 @@ Optional Arguments:
         -c      v50       lambda    mu        hill     hill     N/A     c
         -d      slope     N/A       sigma     N/A      N/A      N/A     N/A
 
-TODO:
+##TODO:##
 1. Add more models
 2. Expand input options
 3. Plot results

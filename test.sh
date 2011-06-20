@@ -3,7 +3,7 @@
 OS=`uname -s`
 
 echo "Boltzmann sigmoid"
-./curvefit -f examples/boltzmann_ex.txt -m boltzmann -a 0.0 -c 0.1 -d 1.5
+./curvefit -f examples/boltzmann_ex.txt -m boltzmann
 
 echo "Exponential Decay"
 ./curvefit -f examples/expdecay_ex.txt -m expdecay
