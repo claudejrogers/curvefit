@@ -16,9 +16,9 @@
 int main (int argc, char **argv)
 {
     int i, c;
-    FILE *fp;
     char *filename = NULL;
-    struct cfdata values;
+    FileData fd;
+    CFData values;
     double var[4];
     var[0] = var[1] = var[2] = var[3] = 1.0;
 
@@ -69,8 +69,8 @@ int main (int argc, char **argv)
         case '?':
             if (optopt == 'f' || optopt == 'm')
                 fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-            else if ((optopt != 'x' || 
-                      optopt != 'y' || 
+            else if ((optopt != 'x' ||
+                      optopt != 'y' ||
                       optopt != 'z') && isprint(optopt))
                 fprintf (stderr, "Unknown option `-%c'.\n", optopt);
             else
@@ -80,18 +80,16 @@ int main (int argc, char **argv)
         default:
             abort();
     }
-    if (!filename) { 
+    if (!filename) {
         fprintf(stderr, "Missing required argument\n");
         usage(argv);
         return 1;
     }
 
-    const unsigned int len = filelines(filename);
+    readfile(filename, &fd);
 
-    fp = fopen(filename, "r");
+    values.datalen = fd.len;
 
-    values.datalen = len;
-    
     switch (values.model) {
         case boltzmann:
         case gaussian:
@@ -121,13 +119,13 @@ int main (int argc, char **argv)
     double *d3v;
     double *d4v;
 
-    xv = (double *) malloc(sizeof(double)*len);
-    yv = (double *) malloc(sizeof(double)*len);
-    mv = (double *) malloc(sizeof(double)*len);
-    d1v = (double *) malloc(sizeof(double)*len);
-    d2v = (double *) malloc(sizeof(double)*len);
-    d3v = (double *) malloc(sizeof(double)*len);
-    d4v = (double *) malloc(sizeof(double)*len);
+    xv =  (double *) malloc(sizeof(double) * fd.len);
+    yv =  (double *) malloc(sizeof(double) * fd.len);
+    mv =  (double *) malloc(sizeof(double) * fd.len);
+    d1v = (double *) malloc(sizeof(double) * fd.len);
+    d2v = (double *) malloc(sizeof(double) * fd.len);
+    d3v = (double *) malloc(sizeof(double) * fd.len);
+    d4v = (double *) malloc(sizeof(double) * fd.len);
 
     values.x = xv;
     values.y = yv;
@@ -137,16 +135,16 @@ int main (int argc, char **argv)
     values.d3 = d3v;
     values.d4 = d4v;
 
-    float tempX, tempY;
-    for (i = 0; fscanf(fp, "%f\t%f", &tempX, &tempY) != EOF; i++){
-        values.x[i] = (double)tempX;
-        values.y[i] = (double)tempY;
+    for (i = 0; i < fd.len; i++){
+        values.x[i] = fd.xdata[i];
+        values.y[i] = fd.ydata[i];
     }
+
+    free((void *) fd.xdata);
+    free((void *) fd.ydata);
 
     levenberg_marquardt(&values, var);
 
-    fclose(fp);
-    
     output(filename, &values, var);
 
     free((void *) xv);

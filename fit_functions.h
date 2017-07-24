@@ -18,12 +18,20 @@ enum Models {
     expdecay,
     gaussian,
     hill,
-    ic50, 
+    ic50,
     mm,
     modsin
 };
 
-struct cfdata {
+typedef struct {
+  double *xdata;
+  double *ydata;
+  int size;
+  int len;
+} FileData;
+
+
+typedef struct {
     enum Models model;
     int varlen;  // number of parameters for given model
     int datalen; // number of data points
@@ -34,7 +42,7 @@ struct cfdata {
     double *d2;  // ...
     double *d3;  // ..., not used for mm model
     double *d4;  // only used in gaussian model
-};
+} CFData;
 
 void usage(char **argv);
 
@@ -42,37 +50,37 @@ void usage(char **argv);
  * Prints a help message
  */
 
-int filelines(char *filepath);
+void readfile(char *filepath, FileData *data);
 
 /*
  * Counts the number of data points in the file
  */
 
-void equation(struct cfdata *data, double *var);
+void equation(CFData *data, double *var);
 
 /*
  * Calculates values for m(x, VAR)
  */
 
-void derivatives(struct cfdata *data, double *var);
+void derivatives(CFData *data, double *var);
 
 /*
- * Calculates values for the partial derivatives of the 
+ * Calculates values for the partial derivatives of the
  * vars.
  */
-void get_f(gsl_vector *fvect, struct cfdata *data, double *var);
+void get_f(gsl_vector *fvect, CFData *data, double *var);
 
 /*
- * Calculates f(x). f(xi, VAR) = yi - m(xi, VAR). Minimizing 
+ * Calculates f(x). f(xi, VAR) = yi - m(xi, VAR). Minimizing
  * $\frac{1}{2}\sum[f(x, VAR)]^2$ is the goal of the program
  */
-void get_jac(double *jac, struct cfdata *data, double *var);
+void get_jac(double *jac, CFData *data, double *var);
 
 /*
  * Calculates the Jacobian
  */
 
-void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data, 
+void solve_h(double *a, gsl_matrix *muImat, CFData *data,
              double *g, double *h);
 
 /*
@@ -80,7 +88,7 @@ void solve_h(double *a, gsl_matrix *muImat, struct cfdata *data,
  */
 
 
-double get_rho(gsl_vector *fvect, gsl_vector *newfvect, struct cfdata *data,
+double get_rho(gsl_vector *fvect, gsl_vector *newfvect, CFData *data,
                double mu, double *h, double *g);
 
 /*
@@ -94,14 +102,14 @@ double get_mu(int vlen, double *a);
  */
 
 
-void levenberg_marquardt(struct cfdata *data, double *var);
+void levenberg_marquardt(CFData *data, double *var);
 
 /*
  * The main routine. Finds values for VAR than minimize the
  * function $\frac{1}{2}\Sigma[f(x, VAR)]^2$
  */
 
-void output(char *filename, struct cfdata *data, double *var);
+void output(char *filename, CFData *data, double *var);
 
 /*
  * Creates a gnuplot script to plot results. TODO: add -o option

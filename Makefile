@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall
-LDFLAGS = -lgsl -lgslcblas
+LDFLAGS = -lgsl -lgslcblas -lm
 
 PROG = curvefit
 HDRS = fit_functions.h
@@ -12,7 +12,7 @@ OBJS = $(SRCS:.c=.o)
 
 $(PROG) : $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROG) $(OBJS)
-         
+
 main.o : main.c fit_functions.h
 
 fit_functions.o : fit_functions.c fit_functions.h
